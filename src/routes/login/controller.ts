@@ -4,10 +4,10 @@ import LoginService from "./service";
 
 const loginController = Router();
 
-loginController.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  const login = new LoginService(email, password);
-  if (login.validate()) {
+loginController.post("/login", async (req, res) => {
+  const login = new LoginService(req.body);
+  const isValid = await login.verify();
+  if (isValid) {
     const userId = login.getUserId();
     const SECRET = process.env.SECRET as string;
     const loginTime = 3600; // 1h

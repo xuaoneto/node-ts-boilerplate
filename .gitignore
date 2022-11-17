@@ -2,5 +2,9 @@
 
 # dependencies
 /node_modules
+
+# folders
+/dist
+
 # files
 .env

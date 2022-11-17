@@ -1,9 +1,8 @@
-import { Response } from "express";
-import { MongoError, MongoServerError } from "mongodb";
+import bcrypt from "bcrypt";
+import { MongoError } from "mongodb";
 import { getDatabase } from "../../db";
 import { NewUserDTO } from "../../models/new-user-dto";
 import { mongoErrors } from "../../utils/mongo-errors";
-
 class AccountService {
   private props: NewUserDTO;
 
@@ -44,14 +43,20 @@ class AccountService {
     return { isValid: !errors.length, errors };
   }
 
-  async save() {
+  async save(adminPass?: string) {
     try {
       const db = await getDatabase();
-      const respDb = await db.collection("users").insertOne(this);
+      const hashedPass = await bcrypt.hash(this.props.password, 10);
+      const admin = adminPass && process.env.SECRET_ADMIN_PASS === adminPass;
+      const insertVersion = {
+        ...this.props,
+        password: hashedPass,
+        userType: admin ? "admin" : "common",
+      };
+      const respDb = await db.collection("users").insertOne(insertVersion);
       return { status: 204, message: "sucesso" };
     } catch (e) {
       const error = e as MongoError;
-
       return {
         message: mongoErrors[error.code ?? ""] ?? "Erro de Inserção",
         status: 409,

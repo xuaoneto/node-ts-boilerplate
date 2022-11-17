@@ -1,18 +1,31 @@
+import { getDatabase } from "../../db";
+import { ExistingUserDTO } from "../../models/existing-user";
+import bcrypt from "bcrypt";
 class LoginService {
-  private readonly email;
-  private readonly password;
+  private props: ExistingUserDTO;
+  private userId: string | null = null;
 
-  constructor(email: string, password: string) {
-    this.email = email;
-    this.password = password;
-    Object.freeze(this);
+  constructor({ email, password }: ExistingUserDTO) {
+    this.props = { email, password };
   }
-  validate() {
-    if (this.email === "joao@gmail.com" && this.password === "123") return true;
-    else return false;
+  async verify() {
+    const db = await getDatabase();
+    const registration = await db
+      .collection("users")
+      .findOne({ email: this.props.email });
+    if (registration) {
+      this.userId = registration._id.toString();
+      const isValid = await bcrypt.compare(
+        this.props.password,
+        registration.password
+      );
+      return isValid;
+    } else {
+      return false;
+    }
   }
   getUserId() {
-    return 1;
+    return this.userId;
   }
 }
 
